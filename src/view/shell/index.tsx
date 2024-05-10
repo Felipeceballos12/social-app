@@ -13,13 +13,14 @@ import * as NavigationBar from 'expo-navigation-bar'
 import {StatusBar} from 'expo-status-bar'
 import {useNavigationState} from '@react-navigation/native'
 
-import {useSession} from '#/state/session'
+import {useAgent, useSession} from '#/state/session'
 import {
   useIsDrawerOpen,
   useIsDrawerSwipeDisabled,
   useSetDrawerOpen,
 } from '#/state/shell'
 import {useCloseAnyActiveElement} from '#/state/util'
+import {useNotificationsHandler} from 'lib/hooks/useNotificationHandler'
 import {usePalette} from 'lib/hooks/usePalette'
 import * as notifications from 'lib/notifications/notifications'
 import {isStateAtTabRoot} from 'lib/routes/helpers'
@@ -57,10 +58,13 @@ function ShellInner() {
   )
   const canGoBack = useNavigationState(state => !isStateAtTabRoot(state))
   const {hasSession, currentAccount} = useSession()
+  const {getAgent} = useAgent()
   const closeAnyActiveElement = useCloseAnyActiveElement()
   const {importantForAccessibility} = useDialogStateContext()
   // start undefined
   const currentAccountDid = React.useRef<string | undefined>(undefined)
+
+  useNotificationsHandler()
 
   React.useEffect(() => {
     let listener = {remove() {}}
@@ -78,11 +82,14 @@ function ShellInner() {
     // only runs when did changes
     if (currentAccount && currentAccountDid.current !== currentAccount.did) {
       currentAccountDid.current = currentAccount.did
-      notifications.requestPermissionsAndRegisterToken(currentAccount)
-      const unsub = notifications.registerTokenChangeHandler(currentAccount)
+      notifications.requestPermissionsAndRegisterToken(getAgent, currentAccount)
+      const unsub = notifications.registerTokenChangeHandler(
+        getAgent,
+        currentAccount,
+      )
       return unsub
     }
-  }, [currentAccount])
+  }, [currentAccount, getAgent])
 
   return (
     <>

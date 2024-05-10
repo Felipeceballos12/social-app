@@ -1,8 +1,11 @@
 import React from 'react'
+import {TextStyle} from 'react-native'
 import {AppBskyRichtextFacet, RichText as RichTextAPI} from '@atproto/api'
 import {msg} from '@lingui/macro'
 import {useLingui} from '@lingui/react'
+import {useNavigation} from '@react-navigation/native'
 
+import {NavigationProp} from '#/lib/routes/types'
 import {toShortUrl} from '#/lib/strings/url-helpers'
 import {isNative} from '#/platform/detection'
 import {atoms as a, flatten, native, TextStyleProp, useTheme, web} from '#/alf'
@@ -24,6 +27,7 @@ export function RichText({
   enableTags = false,
   authorHandle,
   onLinkPress,
+  interactiveStyle,
 }: TextStyleProp &
   Pick<TextProps, 'selectable'> & {
     value: RichTextAPI | string
@@ -33,13 +37,22 @@ export function RichText({
     enableTags?: boolean
     authorHandle?: string
     onLinkPress?: LinkProps['onPress']
+    interactiveStyle?: TextStyle
   }) {
   const richText = React.useMemo(
     () =>
       value instanceof RichTextAPI ? value : new RichTextAPI({text: value}),
     [value],
   )
-  const styles = [a.leading_snug, flatten(style)]
+
+  const flattenedStyle = flatten(style)
+  const plainStyles = [a.leading_snug, flattenedStyle]
+  const interactiveStyles = [
+    a.leading_snug,
+    a.pointer_events_auto,
+    flatten(interactiveStyle),
+    flattenedStyle,
+  ]
 
   const {text, facets} = richText
 
@@ -65,7 +78,7 @@ export function RichText({
       <Text
         selectable={selectable}
         testID={testID}
-        style={styles}
+        style={plainStyles}
         numberOfLines={numberOfLines}
         // @ts-ignore web only -prf
         dataSet={WORD_WRAP}>
@@ -91,7 +104,7 @@ export function RichText({
           <InlineLinkText
             selectable={selectable}
             to={`/profile/${mention.did}`}
-            style={[...styles, {pointerEvents: 'auto'}]}
+            style={interactiveStyles}
             // @ts-ignore TODO
             dataSet={WORD_WRAP}
             onPress={onLinkPress}>
@@ -108,7 +121,7 @@ export function RichText({
             selectable={selectable}
             key={key}
             to={link.uri}
-            style={[...styles, {pointerEvents: 'auto'}]}
+            style={interactiveStyles}
             // @ts-ignore TODO
             dataSet={WORD_WRAP}
             shareOnLongPress
@@ -128,7 +141,7 @@ export function RichText({
           key={key}
           text={segment.text}
           tag={tag.tag}
-          style={styles}
+          style={interactiveStyles}
           selectable={selectable}
           authorHandle={authorHandle}
         />,
@@ -143,7 +156,7 @@ export function RichText({
     <Text
       selectable={selectable}
       testID={testID}
-      style={styles}
+      style={plainStyles}
       numberOfLines={numberOfLines}
       // @ts-ignore web only -prf
       dataSet={WORD_WRAP}>
@@ -178,8 +191,15 @@ function RichTextTag({
     onIn: onPressIn,
     onOut: onPressOut,
   } = useInteractionState()
+  const navigation = useNavigation<NavigationProp>()
 
-  const open = React.useCallback(() => {
+  const navigateToPage = React.useCallback(() => {
+    navigation.push('Hashtag', {
+      tag: encodeURIComponent(tag),
+    })
+  }, [navigation, tag])
+
+  const openDialog = React.useCallback(() => {
     control.open()
   }, [control])
 
@@ -195,9 +215,10 @@ function RichTextTag({
           selectable={selectable}
           {...native({
             accessibilityLabel: _(msg`Hashtag: #${tag}`),
-            accessibilityHint: _(msg`Click here to open tag menu for #${tag}`),
+            accessibilityHint: _(msg`Long press to open tag menu for #${tag}`),
             accessibilityRole: isNative ? 'button' : undefined,
-            onPress: open,
+            onPress: navigateToPage,
+            onLongPress: openDialog,
             onPressIn: onPressIn,
             onPressOut: onPressOut,
           })}
@@ -209,19 +230,16 @@ function RichTextTag({
           onFocus={onFocus}
           onBlur={onBlur}
           style={[
-            style,
-            {
-              pointerEvents: 'auto',
-              color: t.palette.primary_500,
-            },
             web({
               cursor: 'pointer',
             }),
+            {color: t.palette.primary_500},
             (hovered || focused || pressed) && {
               ...web({outline: 0}),
               textDecorationLine: 'underline',
               textDecorationColor: t.palette.primary_500,
             },
+            style,
           ]}>
           {text}
         </Text>

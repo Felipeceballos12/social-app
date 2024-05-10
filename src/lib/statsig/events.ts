@@ -4,7 +4,12 @@ export type LogEvents = {
     initMs: number
   }
   'account:loggedIn': {
-    logContext: 'LoginForm' | 'SwitchAccount' | 'ChooseAccountForm' | 'Settings'
+    logContext:
+      | 'LoginForm'
+      | 'SwitchAccount'
+      | 'ChooseAccountForm'
+      | 'Settings'
+      | 'Notification'
     withPassword: boolean
   }
   'account:loggedOut': {
@@ -60,6 +65,8 @@ export type LogEvents = {
     feedType: string
     reason: 'pull-to-refresh' | 'soft-reset' | 'load-latest'
   }
+  'composer:gif:open': {}
+  'composer:gif:select': {}
 
   // Data events
   'account:create:begin': {}
@@ -111,4 +118,14 @@ export type LogEvents = {
       | 'ProfileMenu'
       | 'ProfileHoverCard'
   }
+
+  'test:all:always': {}
+  'test:all:sometimes': {}
+  'test:all:boosted_by_gate1': {reason: 'base' | 'gate1'}
+  'test:all:boosted_by_gate2': {reason: 'base' | 'gate2'}
+  'test:all:boosted_by_both': {reason: 'base' | 'gate1' | 'gate2'}
+  'test:gate1:always': {}
+  'test:gate1:sometimes': {}
+  'test:gate2:always': {}
+  'test:gate2:sometimes': {}
 }
