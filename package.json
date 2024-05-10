@@ -262,8 +262,7 @@
     "webpack-dev-server": "^4.11.1"
   },
   "resolutions": {
-    "@types/react": "^18",
-    "**/zeed-dom": "0.10.9"
+    "@types/react": "^18"
   },
   "jest": {
     "preset": "jest-expo/ios",
